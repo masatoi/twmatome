@@ -12,6 +12,7 @@
   :components ((:module "src"
                 :components
                 ((:file "twmatome")
+                 (:file "output-hugo-content")
                  ;; (:file "webpage")
                  )))
   :description ""

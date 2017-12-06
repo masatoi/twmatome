@@ -5,6 +5,7 @@
 
 (in-package :matome)
 
+;; load a setting file
 (handler-case
     (load "~/.chirp")
   (error (e)
@@ -79,7 +80,7 @@
       (with-retry 60
         (collections/add col (id tw)))
       (sleep 1))
-    (url col)))
+    col))
 
 (defparameter *tweet-q* (make-instance 'priority-queue))
 (defparameter *last-tweet* nil)
