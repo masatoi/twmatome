@@ -1,7 +1,8 @@
 (defpackage :twmatome
   (:use :cl :chirp :cl-markup :cl-heap :anaphora)
   (:nicknames :matome)
-  (:shadowing-import-from :cl-markup :html))
+  (:shadowing-import-from :cl-markup :html)
+  (:export :search-fgo-and-make-col))
 
 (in-package :matome)
 
