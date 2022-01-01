@@ -12,23 +12,25 @@
   (error (e)
     (format t "~A~%" e)))
 
-(defmacro with-retry (interval &body body)
+(defmacro with-retry ((&key (interval 60) (max-retry 10)) &body body)
   (let ((finish? (gensym))
-        (result (gensym)))
+        (result (gensym))
+        (cnt (gensym)))
     `(let (,finish? ,result)
-       (loop until ,finish? do
-         (handler-case
-             (setf ,result (progn ,@body)
-                   ,finish? t)
-           (error (e)
-             (format t "Error: ~A~%" e)
-             (format t "Sleeping while ~A seconds...~%" ,interval)
-             (sleep ,interval)
-             (format t "Restarting~%"))))
+       (loop for ,cnt from 1 to ,max-retry
+             until ,finish?
+             do (handler-case
+                    (setf ,result (progn ,@body)
+                          ,finish? t)
+                  (error (e)
+                    (format t "Error: ~A~%" e)
+                    (format t "Sleeping while ~A seconds...~%" ,interval)
+                    (sleep ,interval)
+                    (format t "Restarting (~A/~A)~%" ,cnt ,max-retry))))
        ,result)))
 
-(defun try-search-with-restart (query &key (interval 60) (count 100) max-id)
-  (with-retry interval
+(defun try-search-with-restart (query &key (interval 60) (max-retry 10) (count 100) max-id)
+  (with-retry (:interval interval :max-retry max-retry)
     (search/tweets query :count count :max-id max-id)))
 
 (defun cascade-search (query &key (count 100) (interval 5) (max-cycle 100))
@@ -74,11 +76,11 @@
                     (local-time:now)
                     :format '(:year "/" :month "/" :day)))
          ;; create collection
-         (col (with-retry 60 (collections/create (format nil "~A #FGO" date-str)))))
+         (col (with-retry () (collections/create (format nil "~A #FGO" date-str)))))
     ;; add tweets
     (format t "Adding tweets to collection ~A~%" col)
     (dolist (tw (reverse (subseq sorted-result 0 100)))
-      (with-retry 60
+      (with-retry ()
         (collections/add col (id tw)))
       (sleep 1))
     col))

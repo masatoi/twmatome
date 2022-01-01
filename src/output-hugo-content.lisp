@@ -19,4 +19,3 @@
             timestr
             (name col)
             (publish-collection col))))
-
