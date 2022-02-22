@@ -97,7 +97,7 @@
     col))
 
 (defun search-fgo-and-make-col ()
-  (search-and-make-col ("#FGO")))
+  (search-and-make-col "#FGO"))
 
 (defparameter *tweet-q* (make-instance 'priority-queue))
 (defparameter *last-tweet* nil)
