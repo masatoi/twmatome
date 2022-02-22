@@ -48,6 +48,19 @@
              (sleep interval))
     product))
 
+(defun filter-by-followers-count (tweets &key (threshold 1000))
+  (remove-if-not
+   (lambda (tweet)
+     (let ((followers-count (cdr (assoc :followers (counts (user tweet))))))
+       (>= followers-count threshold)))
+   tweets))
+
+(defun sort-by-retweet-count (tweets)
+  (sort (copy-seq tweets)
+        (lambda (tw1 tw2)
+          (> (cdr (assoc :retweets (counts tw1)))
+             (cdr (assoc :retweets (counts tw2)))))))
+
 ;; (defparameter *search-result* (cascade-search "#FGO -filter:retweets"))
 
 ;; (defparameter *sorted-result*
@@ -65,18 +78,16 @@
 ;; (url *col*) ; => "https://twitter.com/masatoi0/timelines/929055107580248064"
 ;; "https://twitter.com/masatoi0/timelines/931069748724379649"
 
-(defun search-fgo-and-make-col ()
-  (let* ((search-result (cascade-search "#FGO -filter:retweets"))
-         (sorted-result (sort (copy-seq search-result)
-                              (lambda (tw1 tw2)
-                                (> (cdr (assoc :retweets (counts tw1)))
-                                   (cdr (assoc :retweets (counts tw2)))))))
+(defun search-and-make-col (query)
+  (let* ((search-result (cascade-search (format nil "~A -filter:retweets" query)))
+         ;; sort by retweets count
+         (sorted-result (sort-by-retweet-count search-result))
          (date-str (local-time:format-timestring
                     nil
                     (local-time:now)
                     :format '(:year "/" :month "/" :day)))
          ;; create collection
-         (col (with-retry () (collections/create (format nil "~A #FGO" date-str)))))
+         (col (with-retry () (collections/create (format nil "~A ~A" date-str query)))))
     ;; add tweets
     (format t "Adding tweets to collection ~A~%" col)
     (dolist (tw (reverse (subseq sorted-result 0 100)))
@@ -84,6 +95,9 @@
         (collections/add col (id tw)))
       (sleep 1))
     col))
+
+(defun search-fgo-and-make-col ()
+  (search-and-make-col ("#FGO")))
 
 (defparameter *tweet-q* (make-instance 'priority-queue))
 (defparameter *last-tweet* nil)
